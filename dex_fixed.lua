@@ -10427,7 +10427,7 @@ Main = (function()
 	
 	Main.FetchAPI = function()
 		local api,rawAPI
-		-- Try to load from local file first, then from embedded API
+		-- Try to load from local file first, then from embedded API, then from HTTP
 		if Main.Elevated then
 			local localAPI = Lib.ReadFile("dex/rbx_api.dat")
 			if localAPI then 
@@ -10438,7 +10438,16 @@ Main = (function()
 			if script:FindFirstChild("API") then
 				rawAPI = require(script.API)
 			else
-				error("NO API EXISTS - Please add embedded API module")
+				-- Try to fetch from HTTP as fallback
+				local success, result = pcall(function()
+					return game:HttpGet("https://raw.githubusercontent.com/MaximumADHD/Roblox-Client-Tracker/roblox/Full-API-Dump.json")
+				end)
+				if success and result then
+					rawAPI = result
+				else
+					-- Use minimal fallback API structure
+					rawAPI = '{"Classes":[],"Enums":[]}'
+				end
 			end
 		end
 		Main.RawAPI = rawAPI
@@ -10715,8 +10724,18 @@ Main = (function()
 			{15,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Image="rbxassetid://1427967925",Name="Outlines",Parent={2},Position=UDim2.new(0,-5,0,-5),ScaleType=1,Size=UDim2.new(1,10,1,10),SliceCenter=Rect.new(6,6,25,25),TileSize=UDim2.new(0,20,0,20),}},
 			{16,"UIGradient",{Parent={15},Rotation=-30,Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,1,0),}),}},
 			{17,"UIGradient",{Parent={2},Rotation=-30,Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,1,0),}),}},
+			{18,"TextButton",{BackgroundColor3=Color3.new(0.35,0.35,0.35),BorderSizePixel=0,Name="CloseButton",Parent={2},Position=UDim2.new(1,-25,0,5),Size=UDim2.new(0,20,0,20),Text="X",TextColor3=Color3.new(1,1,1),Font=4,TextSize=14,AutoButtonColor=true,}},
 		})
 		Main.ShowGui(gui)
+		
+		-- Close button to stop Dex completely
+		local closeButton = gui.Main.CloseButton
+		closeButton.MouseButton1Click:Connect(function()
+			gui:Destroy()
+			if Main.GuiHolder then Main.GuiHolder:Destroy() end
+			error("Dex closed by user")
+		end)
+		
 		local backGradient = gui.Main.UIGradient
 		local outlinesGradient = gui.Main.Outlines.UIGradient
 		local holderGradient = gui.Main.Holder.UIGradient
