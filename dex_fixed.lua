@@ -4,7 +4,8 @@
 	New Dex
 	Final Version
 	Developed by Moon
-	Editied by Raiju13565
+	Modified for Infinite Yield
+	
 	Dex is a debugging suite designed to help the user debug games and find any potential vulnerabilities.
 ]]
 
@@ -905,6 +906,12 @@ local function main()
 		if presentClasses["Player"] then context:AddRegistered("SELECT_CHARACTER") end
 		if presentClasses["Players"] then context:AddRegistered("SELECT_LOCAL_PLAYER") end
 		if presentClasses["LuaSourceContainer"] then context:AddRegistered("VIEW_SCRIPT") end
+		
+		-- Animation options
+		if presentClasses["Animation"] then
+			context:AddRegistered("PLAY_ANIMATION")
+			context:AddRegistered("STOP_ANIMATIONS")
+		end
 
 		if sMap[nilNode] then
 			context:AddRegistered("REFRESH_NIL")
@@ -918,6 +925,7 @@ local function main()
 		context:AddRegistered("COUNT_DESCENDANTS")
 		context:AddRegistered("PRINT_PROPERTIES")
 		if env.setclipboard then context:AddRegistered("COPY_CLASSNAME") end
+		context:AddRegistered("STOP_ANIMATIONS") -- Always available to stop anims
 
 		Explorer.LastRightClickX, Explorer.LastRightClickY = Main.Mouse.X, Main.Mouse.Y
 		context:Show()
@@ -1486,6 +1494,87 @@ local function main()
 					local count = #obj:GetDescendants()
 					print(obj:GetFullName() .. " has " .. count .. " descendants")
 				end)
+			end
+		end})
+		
+		context:Register("PLAY_ANIMATION",{Name = "Play Animation on Player", OnClick = function()
+			local sList = selection.List
+			local character = plr.Character
+			if not character then print("No character found") return end
+			
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if not humanoid then print("No humanoid found") return end
+			
+			-- Get or create Animator
+			local animator = humanoid:FindFirstChildOfClass("Animator")
+			if not animator then
+				animator = Instance.new("Animator")
+				animator.Parent = humanoid
+			end
+			
+			for i = 1,#sList do
+				pcall(function()
+					local obj = sList[i].Obj
+					local animId = nil
+					
+					-- Get animation ID from different object types
+					if obj:IsA("Animation") then
+						animId = obj.AnimationId
+					elseif obj:IsA("AnimationTrack") then
+						animId = obj.Animation and obj.Animation.AnimationId
+					elseif obj.ClassName == "KeyframeSequence" then
+						-- For KeyframeSequence, we need to publish it or use asset ID
+						print("KeyframeSequence detected - use Animation object instead")
+						return
+					else
+						-- Try to get AnimationId property
+						local success, id = pcall(function() return obj.AnimationId end)
+						if success and id then animId = id end
+					end
+					
+					if not animId or animId == "" then
+						print("No valid AnimationId found on " .. obj:GetFullName())
+						return
+					end
+					
+					-- Stop all current animations
+					for _, track in pairs(animator:GetPlayingAnimationTracks()) do
+						track:Stop(0)
+					end
+					
+					-- Create new animation and play it
+					local newAnim = Instance.new("Animation")
+					newAnim.AnimationId = animId
+					
+					local track = animator:LoadAnimation(newAnim)
+					track.Priority = Enum.AnimationPriority.Action4 -- Highest priority
+					track.Looped = true
+					
+					-- Wait a frame for animation to load
+					task.wait()
+					
+					track:Play(0.1)
+					print("Playing animation: " .. animId)
+					
+					-- Clean up the temp animation object
+					newAnim:Destroy()
+				end)
+			end
+		end})
+		
+		context:Register("STOP_ANIMATIONS",{Name = "Stop All Animations", OnClick = function()
+			local character = plr.Character
+			if not character then return end
+			
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if not humanoid then return end
+			
+			local animator = humanoid:FindFirstChildOfClass("Animator")
+			if animator then
+				for _, track in pairs(animator:GetPlayingAnimationTracks()) do
+					track:Stop(0)
+				end
+				print("Stopped all animations")
 			end
 		end})
 
