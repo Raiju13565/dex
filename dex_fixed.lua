@@ -3018,6 +3018,27 @@ local function main()
 		if #props > 0 then
 			props[#props+1] = Properties.AddAttributeProp
 		end
+		
+		-- Show/hide Animation bar based on selection
+		local animBar = Properties.GuiElems.AnimationBar
+		if animBar then
+			local showAnimBar = false
+			Properties.CurrentObj = nil
+			if #sList == 1 then
+				local obj = sList[1].Obj
+				if obj and obj:IsA("Animation") then
+					showAnimBar = true
+					Properties.CurrentObj = obj
+				end
+			end
+			animBar.Visible = showAnimBar
+			-- Adjust propsFrame size when animBar is visible
+			if showAnimBar then
+				propsFrame.Size = UDim2.new(1,(scrollV.Gui.Visible and -16 or 0),1,(scrollH.Gui.Visible and -67 or -51))
+			else
+				propsFrame.Size = UDim2.new(1,(scrollV.Gui.Visible and -16 or 0),1,(scrollH.Gui.Visible and -39 or -23))
+			end
+		end
 
 		Properties.Update()
 		Properties.Refresh()
@@ -4360,6 +4381,9 @@ local function main()
 			{9,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://5642310344",Parent={8},Position=UDim2.new(0,3,0,3),Size=UDim2.new(0,12,0,12),}},
 			{10,"Frame",{BackgroundColor3=Color3.new(0.15686275064945,0.15686275064945,0.15686275064945),BorderSizePixel=0,Name="ScrollCorner",Parent={1},Position=UDim2.new(1,-16,1,-16),Size=UDim2.new(0,16,0,16),Visible=false,}},
 			{11,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,ClipsDescendants=true,Name="List",Parent={1},Position=UDim2.new(0,0,0,23),Size=UDim2.new(1,0,1,-23),}},
+			{12,"Frame",{BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BorderSizePixel=0,Name="AnimationBar",Parent={1},Position=UDim2.new(0,0,1,-28),Size=UDim2.new(1,0,0,28),Visible=false,}},
+			{13,"TextButton",{BackgroundColor3=Color3.new(0.2,0.6,0.2),BorderSizePixel=0,Font=4,Name="PlayButton",Parent={12},Position=UDim2.new(0,5,0,4),Size=UDim2.new(0.5,-8,0,20),Text="▶ Play Animation",TextColor3=Color3.new(1,1,1),TextSize=12,}},
+			{14,"TextButton",{BackgroundColor3=Color3.new(0.6,0.2,0.2),BorderSizePixel=0,Font=4,Name="StopButton",Parent={12},Position=UDim2.new(0.5,3,0,4),Size=UDim2.new(0.5,-8,0,20),Text="■ Stop All",TextColor3=Color3.new(1,1,1),TextSize=12,}},
 		})
 
 		-- Vars
@@ -4381,8 +4405,68 @@ local function main()
 
 		Properties.GuiElems.ToolBar = toolBar
 		Properties.GuiElems.PropsFrame = propsFrame
+		Properties.GuiElems.AnimationBar = guiItems.AnimationBar
 
 		Properties.InitEntryStuff()
+		
+		-- Animation bar buttons
+		local animBar = guiItems.AnimationBar
+		animBar.PlayButton.MouseButton1Click:Connect(function()
+			local selectedObj = Properties.CurrentObj
+			if not selectedObj or not selectedObj:IsA("Animation") then return end
+			
+			local character = plr.Character
+			if not character then print("No character found") return end
+			
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if not humanoid then print("No humanoid found") return end
+			
+			local animator = humanoid:FindFirstChildOfClass("Animator")
+			if not animator then
+				animator = Instance.new("Animator")
+				animator.Parent = humanoid
+			end
+			
+			local animId = selectedObj.AnimationId
+			if not animId or animId == "" then
+				print("No AnimationId found")
+				return
+			end
+			
+			-- Stop all current animations
+			for _, track in pairs(animator:GetPlayingAnimationTracks()) do
+				track:Stop(0)
+			end
+			
+			-- Create and play new animation
+			local newAnim = Instance.new("Animation")
+			newAnim.AnimationId = animId
+			
+			local track = animator:LoadAnimation(newAnim)
+			track.Priority = Enum.AnimationPriority.Action4
+			track.Looped = true
+			
+			task.wait()
+			track:Play(0.1)
+			print("Playing animation: " .. animId)
+			newAnim:Destroy()
+		end)
+		
+		animBar.StopButton.MouseButton1Click:Connect(function()
+			local character = plr.Character
+			if not character then return end
+			
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if not humanoid then return end
+			
+			local animator = humanoid:FindFirstChildOfClass("Animator")
+			if animator then
+				for _, track in pairs(animator:GetPlayingAnimationTracks()) do
+					track:Stop(0)
+				end
+				print("Stopped all animations")
+			end
+		end)
 
 		-- Window events
 		window.GuiElems.Main:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
@@ -4425,6 +4509,7 @@ local function main()
 		toolBar.Parent = window.GuiElems.Content
 		propsFrame.Parent = window.GuiElems.Content
 		guiItems.ScrollCorner.Parent = window.GuiElems.Content
+		guiItems.AnimationBar.Parent = window.GuiElems.Content
 		scrollV.Gui.Parent = window.GuiElems.Content
 		scrollH.Gui.Parent = window.GuiElems.Content
 		Properties.InitInputBox()
@@ -11270,6 +11355,8 @@ Main = (function()
 			{19,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://6579106223",ImageRectSize=Vector2.new(32,32),Name="Icon",Parent={18},Position=UDim2.new(0.5,-16,0,4),ScaleType=4,Size=UDim2.new(0,32,0,32),}},
 			{20,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="AppName",Parent={18},Position=UDim2.new(0,2,0,38),Size=UDim2.new(1,-4,1,-40),Text="Explorer",TextColor3=Color3.new(1,1,1),TextSize=14,TextTransparency=0.10000000149012,TextTruncate=1,TextWrapped=true,TextYAlignment=0,}},
 			{21,"Frame",{BackgroundColor3=Color3.new(0,0.66666668653488,1),BorderSizePixel=0,Name="Highlight",Parent={18},Position=UDim2.new(0,0,1,-2),Size=UDim2.new(1,0,0,2),}},
+			{22,"TextButton",{BackgroundColor3=Color3.new(0.6,0.2,0.2),BackgroundTransparency=0,BorderSizePixel=0,Font=4,Name="UnloadButton",Parent={6},Position=UDim2.new(0,4,0,2),Size=UDim2.new(0,60,0,20),Text="X Unload",TextColor3=Color3.new(1,1,1),TextSize=11,}},
+			{23,"UICorner",{CornerRadius=UDim.new(0,3),Parent={22},}},
 		})
 		Main.MainGui = gui
 		Main.AppsFrame = gui.OpenButton.MainFrame.AppsFrame
@@ -11296,6 +11383,15 @@ Main = (function()
 			if input.UserInputType == Enum.UserInputType.MouseMovement then
 				service.TweenService:Create(Main.MainGui.OpenButton,TweenInfo.new(0,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{BackgroundTransparency = Main.MainGuiOpen and 0 or 0.2}):Play()
 			end
+		end)
+		
+		-- Unload Dex button
+		local unloadButton = gui.OpenButton.MainFrame.BottomFrame.UnloadButton
+		unloadButton.MouseButton1Click:Connect(function()
+			-- Destroy all Dex GUI
+			if Main.GuiHolder then Main.GuiHolder:Destroy() end
+			if gui then gui:Destroy() end
+			print("Dex unloaded")
 		end)
 		
 		-- Create Main Apps
