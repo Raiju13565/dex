@@ -4,8 +4,7 @@
 	New Dex
 	Final Version
 	Developed by Moon
-	Modified for Infinite Yield
-	
+	Editied by Raiju13565
 	Dex is a debugging suite designed to help the user debug games and find any potential vulnerabilities.
 ]]
 
@@ -891,6 +890,13 @@ local function main()
 		if presentClasses["BasePart"] or presentClasses["Model"] then
 			context:AddRegistered("TELEPORT_TO")
 			context:AddRegistered("VIEW_OBJECT")
+			context:AddRegistered("BRING_TO_ME")
+			context:AddRegistered("MAKE_INVISIBLE")
+			context:AddRegistered("MAKE_VISIBLE")
+			context:AddRegistered("TOGGLE_CANCOLLIDE")
+			context:AddRegistered("TOGGLE_ANCHORED")
+			context:AddRegistered("HIGHLIGHT_OBJECT")
+			context:AddRegistered("CLONE_TO_WORKSPACE")
 		end
 
 		if presentClasses["TouchTransmitter"] then context:AddRegistered("FIRE_TOUCHTRANSMITTER", firetouchinterest == nil) end
@@ -904,6 +910,14 @@ local function main()
 			context:AddRegistered("REFRESH_NIL")
 			context:AddRegistered("HIDE_NIL")
 		end
+		
+		-- New universal options
+		context:QueueDivider()
+		context:AddRegistered("DESTROY_CHILDREN")
+		context:AddRegistered("REMOVE_SCRIPTS")
+		context:AddRegistered("COUNT_DESCENDANTS")
+		context:AddRegistered("PRINT_PROPERTIES")
+		if env.setclipboard then context:AddRegistered("COPY_CLASSNAME") end
 
 		Explorer.LastRightClickX, Explorer.LastRightClickY = Main.Mouse.X, Main.Mouse.Y
 		context:Show()
@@ -1309,6 +1323,170 @@ local function main()
 		
 		context:Register("HIDE_NIL",{Name = "Hide Nil Instances", OnClick = function()
 			Explorer.HideNilInstances()
+		end})
+
+		-- === NEW CUSTOM FEATURES ===
+		
+		context:Register("CLONE_TO_WORKSPACE",{Name = "Clone to Workspace", IconMap = Explorer.MiscIcons, Icon = "Copy", OnClick = function()
+			local sList = selection.List
+			for i = 1,#sList do
+				pcall(function()
+					local cloned = sList[i].Obj:Clone()
+					if cloned then cloned.Parent = workspace end
+				end)
+			end
+		end})
+		
+		context:Register("DESTROY_CHILDREN",{Name = "Destroy All Children", IconMap = Explorer.MiscIcons, Icon = "Delete", OnClick = function()
+			local sList = selection.List
+			for i = 1,#sList do
+				pcall(function()
+					for _,child in pairs(sList[i].Obj:GetChildren()) do
+						child:Destroy()
+					end
+				end)
+			end
+		end})
+		
+		context:Register("MAKE_INVISIBLE",{Name = "Make Invisible", OnClick = function()
+			local sList = selection.List
+			for i = 1,#sList do
+				pcall(function()
+					local obj = sList[i].Obj
+					if obj:IsA("BasePart") then
+						obj.Transparency = 1
+					elseif obj:IsA("Decal") or obj:IsA("Texture") then
+						obj.Transparency = 1
+					end
+				end)
+			end
+		end})
+		
+		context:Register("MAKE_VISIBLE",{Name = "Make Visible", OnClick = function()
+			local sList = selection.List
+			for i = 1,#sList do
+				pcall(function()
+					local obj = sList[i].Obj
+					if obj:IsA("BasePart") then
+						obj.Transparency = 0
+					elseif obj:IsA("Decal") or obj:IsA("Texture") then
+						obj.Transparency = 0
+					end
+				end)
+			end
+		end})
+		
+		context:Register("TOGGLE_CANCOLLIDE",{Name = "Toggle CanCollide", OnClick = function()
+			local sList = selection.List
+			for i = 1,#sList do
+				pcall(function()
+					local obj = sList[i].Obj
+					if obj:IsA("BasePart") then
+						obj.CanCollide = not obj.CanCollide
+					end
+				end)
+			end
+		end})
+		
+		context:Register("TOGGLE_ANCHORED",{Name = "Toggle Anchored", OnClick = function()
+			local sList = selection.List
+			for i = 1,#sList do
+				pcall(function()
+					local obj = sList[i].Obj
+					if obj:IsA("BasePart") then
+						obj.Anchored = not obj.Anchored
+					end
+				end)
+			end
+		end})
+		
+		context:Register("BRING_TO_ME",{Name = "Bring to Me", OnClick = function()
+			local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+			if not hrp then return end
+			local sList = selection.List
+			for i = 1,#sList do
+				pcall(function()
+					local obj = sList[i].Obj
+					if obj:IsA("BasePart") then
+						obj.CFrame = hrp.CFrame + Vector3.new(0,0,-5)
+					elseif obj:IsA("Model") then
+						if obj.PrimaryPart then
+							obj:SetPrimaryPartCFrame(hrp.CFrame + Vector3.new(0,0,-5))
+						elseif obj:FindFirstChildWhichIsA("BasePart") then
+							obj:FindFirstChildWhichIsA("BasePart").CFrame = hrp.CFrame + Vector3.new(0,0,-5)
+						end
+					end
+				end)
+			end
+		end})
+		
+		context:Register("COPY_CLASSNAME",{Name = "Copy ClassName", OnClick = function()
+			local sList = selection.List
+			if #sList == 1 and env.setclipboard then
+				env.setclipboard(sList[1].Obj.ClassName)
+			end
+		end})
+		
+		context:Register("PRINT_PROPERTIES",{Name = "Print All Properties", OnClick = function()
+			local sList = selection.List
+			for i = 1,#sList do
+				pcall(function()
+					local obj = sList[i].Obj
+					print("=== Properties of " .. obj:GetFullName() .. " ===")
+					for prop, val in pairs(obj:GetAttributes()) do
+						print("  [Attr] " .. prop .. " = " .. tostring(val))
+					end
+				end)
+			end
+		end})
+		
+		context:Register("HIGHLIGHT_OBJECT",{Name = "Highlight Object", OnClick = function()
+			local sList = selection.List
+			for i = 1,#sList do
+				pcall(function()
+					local obj = sList[i].Obj
+					if obj:IsA("BasePart") or obj:IsA("Model") then
+						local existing = obj:FindFirstChild("DexHighlight")
+						if existing then
+							existing:Destroy()
+						else
+							local highlight = Instance.new("Highlight")
+							highlight.Name = "DexHighlight"
+							highlight.FillColor = Color3.new(0,1,0)
+							highlight.OutlineColor = Color3.new(1,1,1)
+							highlight.FillTransparency = 0.5
+							highlight.Parent = obj
+						end
+					end
+				end)
+			end
+		end})
+		
+		context:Register("REMOVE_SCRIPTS",{Name = "Remove All Scripts", IconMap = Explorer.MiscIcons, Icon = "Delete", OnClick = function()
+			local sList = selection.List
+			local count = 0
+			for i = 1,#sList do
+				pcall(function()
+					for _,desc in pairs(sList[i].Obj:GetDescendants()) do
+						if desc:IsA("LuaSourceContainer") then
+							desc:Destroy()
+							count = count + 1
+						end
+					end
+				end)
+			end
+			print("Removed " .. count .. " scripts")
+		end})
+		
+		context:Register("COUNT_DESCENDANTS",{Name = "Count Descendants", OnClick = function()
+			local sList = selection.List
+			for i = 1,#sList do
+				pcall(function()
+					local obj = sList[i].Obj
+					local count = #obj:GetDescendants()
+					print(obj:GetFullName() .. " has " .. count .. " descendants")
+				end)
+			end
 		end})
 
 		Explorer.RightClickContext = context
