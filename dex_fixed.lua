@@ -4,7 +4,7 @@
 	New Dex
 	Final Version
 	Developed by Moon
-	Modified for Infinite Yield
+	Modified for Infinite Yield version and editied by Raiju13565
 	
 	Dex is a debugging suite designed to help the user debug games and find any potential vulnerabilities.
 ]]
@@ -4381,9 +4381,9 @@ local function main()
 			{9,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://5642310344",Parent={8},Position=UDim2.new(0,3,0,3),Size=UDim2.new(0,12,0,12),}},
 			{10,"Frame",{BackgroundColor3=Color3.new(0.15686275064945,0.15686275064945,0.15686275064945),BorderSizePixel=0,Name="ScrollCorner",Parent={1},Position=UDim2.new(1,-16,1,-16),Size=UDim2.new(0,16,0,16),Visible=false,}},
 			{11,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,ClipsDescendants=true,Name="List",Parent={1},Position=UDim2.new(0,0,0,23),Size=UDim2.new(1,0,1,-23),}},
-			{12,"Frame",{BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BorderSizePixel=0,Name="AnimationBar",Parent={1},Position=UDim2.new(0,0,1,-28),Size=UDim2.new(1,0,0,28),Visible=false,}},
-			{13,"TextButton",{BackgroundColor3=Color3.new(0.2,0.6,0.2),BorderSizePixel=0,Font=4,Name="PlayButton",Parent={12},Position=UDim2.new(0,5,0,4),Size=UDim2.new(0.5,-8,0,20),Text="▶ Play Animation",TextColor3=Color3.new(1,1,1),TextSize=12,}},
-			{14,"TextButton",{BackgroundColor3=Color3.new(0.6,0.2,0.2),BorderSizePixel=0,Font=4,Name="StopButton",Parent={12},Position=UDim2.new(0.5,3,0,4),Size=UDim2.new(0.5,-8,0,20),Text="■ Stop All",TextColor3=Color3.new(1,1,1),TextSize=12,}},
+			{12,"Frame",{BackgroundColor3=Color3.new(0.20392157137394,0.20392157137394,0.20392157137394),BorderSizePixel=0,Name="AnimationBar",Parent={1},Position=UDim2.new(0,0,1,-28),Size=UDim2.new(1,0,0,28),Visible=false,}},
+			{13,"TextButton",{BackgroundColor3=Color3.new(0.2352941185236,0.2352941185236,0.2352941185236),BorderSizePixel=0,Font=3,Name="PlayButton",Parent={12},Position=UDim2.new(0,4,0,4),Size=UDim2.new(0.5,-6,0,20),Text="Play Animation",TextColor3=Color3.new(1,1,1),TextSize=14,AutoButtonColor=true,}},
+			{14,"TextButton",{BackgroundColor3=Color3.new(0.2352941185236,0.2352941185236,0.2352941185236),BorderSizePixel=0,Font=3,Name="StopButton",Parent={12},Position=UDim2.new(0.5,2,0,4),Size=UDim2.new(0.5,-6,0,20),Text="Stop All",TextColor3=Color3.new(1,1,1),TextSize=14,AutoButtonColor=true,}},
 		})
 
 		-- Vars
@@ -11355,8 +11355,6 @@ Main = (function()
 			{19,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://6579106223",ImageRectSize=Vector2.new(32,32),Name="Icon",Parent={18},Position=UDim2.new(0.5,-16,0,4),ScaleType=4,Size=UDim2.new(0,32,0,32),}},
 			{20,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="AppName",Parent={18},Position=UDim2.new(0,2,0,38),Size=UDim2.new(1,-4,1,-40),Text="Explorer",TextColor3=Color3.new(1,1,1),TextSize=14,TextTransparency=0.10000000149012,TextTruncate=1,TextWrapped=true,TextYAlignment=0,}},
 			{21,"Frame",{BackgroundColor3=Color3.new(0,0.66666668653488,1),BorderSizePixel=0,Name="Highlight",Parent={18},Position=UDim2.new(0,0,1,-2),Size=UDim2.new(1,0,0,2),}},
-			{22,"TextButton",{BackgroundColor3=Color3.new(0.6,0.2,0.2),BackgroundTransparency=0,BorderSizePixel=0,Font=4,Name="UnloadButton",Parent={6},Position=UDim2.new(0,4,0,2),Size=UDim2.new(0,60,0,20),Text="X Unload",TextColor3=Color3.new(1,1,1),TextSize=11,}},
-			{23,"UICorner",{CornerRadius=UDim.new(0,3),Parent={22},}},
 		})
 		Main.MainGui = gui
 		Main.AppsFrame = gui.OpenButton.MainFrame.AppsFrame
@@ -11385,15 +11383,6 @@ Main = (function()
 			end
 		end)
 		
-		-- Unload Dex button
-		local unloadButton = gui.OpenButton.MainFrame.BottomFrame.UnloadButton
-		unloadButton.MouseButton1Click:Connect(function()
-			-- Destroy all Dex GUI
-			if Main.GuiHolder then Main.GuiHolder:Destroy() end
-			if gui then gui:Destroy() end
-			print("Dex unloaded")
-		end)
-		
 		-- Create Main Apps
 		Main.CreateApp({Name = "Explorer", IconMap = Main.LargeIcons, Icon = "Explorer", Open = true, Window = Explorer.Window})
 		
@@ -11416,6 +11405,8 @@ Main = (function()
 				end)
 			else if cptsOnMouseClick ~= nil then cptsOnMouseClick:Disconnect() cptsOnMouseClick = nil end end
 		end})
+		
+		Main.AppsFrame.CanvasSize = UDim2.new(0,0,0,Main.AppsContainerGrid.AbsoluteCellCount.Y*82 + 8)
 		
 		Lib.ShowGui(gui)
 	end
