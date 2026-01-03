@@ -10706,7 +10706,28 @@ Main = (function()
         -- other
         --env.setfflag = setfflag
         env.request = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+        
+        -- Кэш для декомпилированных скриптов (чтобы не спамить API)
+        local decompileCache = {}
+        local lastDecompileTime = 0
+        local DECOMPILE_COOLDOWN = 3 -- секунды между запросами
+        
         env.decompile = decompile or (env.getscriptbytecode and env.request and env.base64encode and function(scr)
+            -- Проверяем кэш
+            local scriptId = tostring(scr:GetDebugId())
+            if decompileCache[scriptId] then
+                return decompileCache[scriptId]
+            end
+            
+            -- Rate limit защита
+            local currentTime = tick()
+            local timeSinceLastRequest = currentTime - lastDecompileTime
+            if timeSinceLastRequest < DECOMPILE_COOLDOWN then
+                local waitTime = DECOMPILE_COOLDOWN - timeSinceLastRequest
+                task.wait(waitTime)
+            end
+            lastDecompileTime = tick()
+            
             local s, bytecode = pcall(env.getscriptbytecode, scr)
             if not s then
                 return "failed to get bytecode " .. tostring(bytecode)
@@ -10726,9 +10747,15 @@ Main = (function()
 
             local decoded = service.HttpService:JSONDecode(response.Body)
             if decoded.status ~= "ok" then
+                -- Если rate limited - не кэшируем ошибку
+                if string.find(tostring(decoded.status), "rate") then
+                    return "-- Rate limited! Wait a few seconds and try again"
+                end
                 return "decompilation failed: " .. tostring(decoded.status)
             end
 
+            -- Кэшируем успешный результат
+            decompileCache[scriptId] = decoded.output
             return decoded.output
         end)
         env.protectgui = protect_gui or (syn and syn.protect_gui)
