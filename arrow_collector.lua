@@ -282,6 +282,7 @@ MainTab:AddLabel("Auto rejoin on any kick/disconnect")
 local isProcessing = false
 local consecutiveFailures = 0
 local noArrowsCheckCount = 0
+local noArrowsStartTime = nil -- Время когда стрелки пропали
 
 RunService.Heartbeat:Connect(function()
     if autoMode and #foundItems > 0 and not isProcessing then
@@ -335,15 +336,20 @@ RunService.Heartbeat:Connect(function()
                         
                         -- Проверка на отсутствие стрелок
                         if #foundItems == 0 then
-                            noArrowsCheckCount = noArrowsCheckCount + 1
+                            -- Если стрелки пропали - запускаем таймер
+                            if noArrowsStartTime == nil then
+                                noArrowsStartTime = tick()
+                            end
                             
-                            if noArrowsCheckCount >= 2 and serverHopEnabled then
-                                -- Два раза подряд не нашли стрелки - хопаем
-                                StatusLabel:Set("Status: No arrows found - Server hopping...")
+                            local noArrowsTime = tick() - noArrowsStartTime
+                            
+                            if noArrowsTime >= 30 and serverHopEnabled then
+                                -- 30 секунд без стрелок - хопаем
+                                StatusLabel:Set("Status: No arrows for 30s - Server hopping...")
                                 
                                 OrionLib:MakeNotification({
                                     Name = "Server Hop",
-                                    Content = "No arrows found! Hopping to new server...",
+                                    Content = "No arrows for 30 seconds! Hopping to new server...",
                                     Image = "rbxassetid://4483345998",
                                     Time = 5
                                 })
@@ -353,6 +359,8 @@ RunService.Heartbeat:Connect(function()
                                 TeleportService:Teleport(game.PlaceId, LocalPlayer)
                             end
                         else
+                            -- Стрелки нашлись - сбрасываем таймер
+                            noArrowsStartTime = nil
                             noArrowsCheckCount = 0
                         end
                     end
