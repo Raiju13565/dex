@@ -18,6 +18,8 @@ local collectDelay = 1.5
 local lastCollectTime = 0
 local isProcessing = false
 local consecutiveFailures = 0
+local lastSearchTime = 0
+local searchInterval = 30 -- Поиск каждые 30 секунд если нет стрелок
 
 -- Защита от кика - автоматический rejoin
 local function setupKickProtection()
@@ -139,9 +141,16 @@ end
 
 -- Основной цикл фарма
 RunService.Heartbeat:Connect(function()
+    local currentTime = tick()
+    
+    -- Автоматический поиск каждые 30 секунд если нет стрелок
+    if #foundItems == 0 and (currentTime - lastSearchTime) >= searchInterval then
+        print("No arrows found, searching again...")
+        findStandArrows()
+        lastSearchTime = currentTime
+    end
+    
     if #foundItems > 0 and not isProcessing then
-        local currentTime = tick()
-        
         if currentTime - lastCollectTime >= math.max(collectDelay + 3, 4) then
             local character = LocalPlayer.Character
             local hrp = character and character:FindFirstChild("HumanoidRootPart")
@@ -163,26 +172,52 @@ RunService.Heartbeat:Connect(function()
                             local success = useItem(currentIndex)
                             
                             if success then
+                                print("Successfully collected arrow #" .. currentIndex)
                                 lastCollectTime = currentTime
                                 consecutiveFailures = 0
                                 task.wait(2)
                                 currentIndex = currentIndex + 1
                             else
+                                -- Не собрал - пытаемся снова через 1.5 секунды
+                                print("Failed to collect arrow #" .. currentIndex .. ", retrying in 1.5s...")
                                 consecutiveFailures = consecutiveFailures + 1
-                                currentIndex = currentIndex + 1
+                                task.wait(1.5)
+                                
+                                -- Пробуем еще раз
+                                if teleportToItem(currentIndex) then
+                                    task.wait(0.8)
+                                    local retrySuccess = useItem(currentIndex)
+                                    
+                                    if retrySuccess then
+                                        print("Successfully collected arrow #" .. currentIndex .. " on retry!")
+                                        lastCollectTime = currentTime
+                                        consecutiveFailures = 0
+                                        task.wait(2)
+                                        currentIndex = currentIndex + 1
+                                    else
+                                        print("Failed again, moving to next arrow")
+                                        currentIndex = currentIndex + 1
+                                    end
+                                else
+                                    currentIndex = currentIndex + 1
+                                end
                             end
                         else
                             consecutiveFailures = consecutiveFailures + 1
                             currentIndex = currentIndex + 1
                         end
                     else
+                        -- Промпт недоступен - удаляем из списка
+                        print("Arrow #" .. currentIndex .. " prompt not available, removing from list")
                         table.remove(foundItems, currentIndex)
                     end
                     
-                    if consecutiveFailures >= 3 or #foundItems == 0 then
-                        print("Searching for new items...")
+                    -- Если много неудач или список пуст - ищем заново
+                    if consecutiveFailures >= 5 or #foundItems == 0 then
+                        print("Too many failures or no arrows left, searching again...")
                         task.wait(2)
                         findStandArrows()
+                        lastSearchTime = currentTime
                         currentIndex = 1
                         consecutiveFailures = 0
                     end
@@ -218,9 +253,12 @@ task.wait(3)
 
 print("Starting AFK farm...")
 findStandArrows()
+lastSearchTime = tick() -- Запоминаем время первого поиска
 
 print("AFK Farm active!")
 print("- Auto-collects Stand Arrows")
+print("- Retries collection after 1.5s if failed")
+print("- Searches for arrows every 30s if none found")
 print("- Auto-rejoins on kick")
 print("- Auto-loads after teleport")
 print("- Waits peacefully when no arrows found")
