@@ -285,6 +285,33 @@ local noArrowsCheckCount = 0
 local noArrowsStartTime = nil -- Время когда стрелки пропали
 
 RunService.Heartbeat:Connect(function()
+    -- Проверка таймера когда нет стрелок (работает всегда)
+    if autoMode and #foundItems == 0 and serverHopEnabled then
+        if noArrowsStartTime == nil then
+            noArrowsStartTime = tick()
+        end
+        
+        local noArrowsTime = tick() - noArrowsStartTime
+        
+        if noArrowsTime >= 30 then
+            -- 30 секунд без стрелок - хопаем
+            StatusLabel:Set("Status: No arrows for 30s - Server hopping...")
+            
+            OrionLib:MakeNotification({
+                Name = "Server Hop",
+                Content = "No arrows for 30 seconds! Hopping to new server...",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+            
+            task.wait(3)
+            TeleportService:Teleport(game.PlaceId, LocalPlayer)
+        end
+    elseif #foundItems > 0 then
+        -- Стрелки есть - сбрасываем таймер
+        noArrowsStartTime = nil
+    end
+    
     if autoMode and #foundItems > 0 and not isProcessing then
         local currentTime = tick()
         
@@ -333,36 +360,6 @@ RunService.Heartbeat:Connect(function()
                         findStandArrows()
                         currentIndex = 1
                         consecutiveFailures = 0
-                        
-                        -- Проверка на отсутствие стрелок
-                        if #foundItems == 0 then
-                            -- Если стрелки пропали - запускаем таймер
-                            if noArrowsStartTime == nil then
-                                noArrowsStartTime = tick()
-                            end
-                            
-                            local noArrowsTime = tick() - noArrowsStartTime
-                            
-                            if noArrowsTime >= 30 and serverHopEnabled then
-                                -- 30 секунд без стрелок - хопаем
-                                StatusLabel:Set("Status: No arrows for 30s - Server hopping...")
-                                
-                                OrionLib:MakeNotification({
-                                    Name = "Server Hop",
-                                    Content = "No arrows for 30 seconds! Hopping to new server...",
-                                    Image = "rbxassetid://4483345998",
-                                    Time = 5
-                                })
-                                
-                                task.wait(3)
-                                
-                                TeleportService:Teleport(game.PlaceId, LocalPlayer)
-                            end
-                        else
-                            -- Стрелки нашлись - сбрасываем таймер
-                            noArrowsStartTime = nil
-                            noArrowsCheckCount = 0
-                        end
                     end
                 end
                 
