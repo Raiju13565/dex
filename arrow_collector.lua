@@ -16,7 +16,6 @@ local foundItems = {}
 local currentIndex = 1
 local collectDelay = 1.5
 local lastCollectTime = 0
-local noArrowsStartTime = nil
 local isProcessing = false
 local consecutiveFailures = 0
 
@@ -140,25 +139,6 @@ end
 
 -- Основной цикл фарма
 RunService.Heartbeat:Connect(function()
-    -- Проверка таймера когда нет стрелок
-    if #foundItems == 0 then
-        if noArrowsStartTime == nil then
-            noArrowsStartTime = tick()
-        end
-        
-        local noArrowsTime = tick() - noArrowsStartTime
-        
-        if noArrowsTime >= 30 then
-            -- 30 секунд без стрелок - хопаем
-            print("No arrows for 30 seconds - Server hopping...")
-            task.wait(3)
-            TeleportService:Teleport(game.PlaceId, LocalPlayer)
-        end
-    elseif #foundItems > 0 then
-        -- Стрелки есть - сбрасываем таймер
-        noArrowsStartTime = nil
-    end
-    
     if #foundItems > 0 and not isProcessing then
         local currentTime = tick()
         
@@ -241,6 +221,6 @@ findStandArrows()
 
 print("AFK Farm active!")
 print("- Auto-collects Stand Arrows")
-print("- Server hops after 30s without arrows")
 print("- Auto-rejoins on kick")
 print("- Auto-loads after teleport")
+print("- Waits peacefully when no arrows found")
