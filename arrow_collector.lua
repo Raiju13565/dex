@@ -37,17 +37,7 @@ local function setupKickProtection()
         end
     end)
     
-    -- Метод 2: Отслеживание события Kick
-    LocalPlayer.Kicked:Connect(function(reason)
-        task.wait(0.5)
-        
-        -- Пробуем реджойн
-        pcall(function()
-            TeleportService:Teleport(game.PlaceId, LocalPlayer)
-        end)
-    end)
-    
-    -- Метод 3: Отслеживание потери соединения
+    -- Метод 2: Отслеживание потери соединения
     game:GetService("GuiService").ErrorMessageChanged:Connect(function()
         task.wait(0.5)
         
