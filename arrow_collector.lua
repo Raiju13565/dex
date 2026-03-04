@@ -1014,8 +1014,8 @@ if queueteleport then
                 end
                 task.wait(1)
                 
-                -- Загружаем скрипт заново (замени на свой URL или код)
-                loadstring(game:HttpGet("YOUR_SCRIPT_URL_HERE"))()
+                -- Загружаем скрипт заново
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/Raiju13565/dex/refs/heads/main/arrow_collector.lua"))()
             ]])
         end
     end)
